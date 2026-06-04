@@ -1,0 +1,163 @@
+.pt-remote-gallery {
+    --grid500-unit: 0.5rem;
+    --grid-target-height: 320px;
+
+    margin: 0;
+    padding: 0;
+    background: #f8f8f8;
+    box-sizing: border-box;
+}
+.pt-remote-gallery__controls {
+    margin-bottom: 0.75rem;
+}
+.pt-remote-gallery__filter {
+    padding: 0.25rem 0.5rem;
+}
+.pt-remote-gallery__grid {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    margin: 0 calc(var(--grid500-unit) * -1);
+}
+.pt-remote-gallery__image-item {
+    display: block;
+    flex-basis: calc(var(--grid-target-height, 320px) * var(--item-ratio));
+    margin: var(--grid500-unit) !important;
+    background: #fff;
+    position: relative;
+    overflow: hidden;
+}
+.c-grid500__itemlink {
+    display: block;
+    position: relative;
+    color: inherit;
+    text-decoration: none;
+}
+.c-grid500__uncollapse {
+    display: block;
+    background: #eee;
+    position: relative;
+    z-index: 0;
+    width: 100%;
+}
+.c-grid500__figure {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1;
+    margin-block: 0;
+}
+.c-grid500__image {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0;
+    transition: opacity 240ms ease-in-out;
+}
+
+.is--loaded {
+    opacity: 1;
+}
+.pt-remote-gallery__meta {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 2;
+    display: grid;
+    gap: 0.2rem;
+    padding: 1rem;
+    color: #fff;
+    background: linear-gradient(0deg, rgba(0, 0, 0, 0.75), transparent);
+    opacity: 0;
+    transform: translateY(0.3rem);
+    transition:
+        opacity 220ms ease,
+        transform 220ms ease;
+    pointer-events: none;
+}
+.pt-remote-gallery__meta .title {
+    font-size: 1rem;
+    font-weight: 600;
+}
+.pt-remote-gallery__meta-secondary {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 2;
+    display: grid;
+    gap: 0.15rem;
+    padding: 1rem;
+    color: #fff;
+    font-size: 0.75em;
+    background: linear-gradient(0deg, rgba(0, 0, 0, 0.6), transparent);
+    opacity: 1;
+    transform: translateY(0);
+    transition:
+        opacity 220ms ease,
+        transform 220ms ease;
+    pointer-events: none;
+}
+/* Hover-to-show caption rules removed; captions remain in DOM.
+   Re-enable by restoring the rules above when needed. */
+.pt-remote-gallery__pager {
+    margin-top: 0.75rem;
+}
+.pt-remote-gallery__pager button {
+    margin-right: 0.5rem;
+}
+.pt-remote-gallery-lightbox {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.85);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 99999;
+}
+.pt-remote-gallery-lightbox__inner {
+    position: relative;
+    max-width: 90%;
+    max-height: 90%;
+}
+.pt-remote-gallery-lightbox__img {
+    max-width: 100%;
+    max-height: 80vh;
+    display: block;
+}
+.pt-remote-gallery-lightbox__close {
+    position: absolute;
+    right: -12px;
+    top: -12px;
+    background: #fff;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    border: 0;
+    font-size: 20px;
+    line-height: 28px;
+    cursor: pointer;
+}
+.pt-remote-gallery__loading,
+.pt-remote-gallery__error {
+    padding: 1rem;
+    text-align: center;
+}
+.pt-remote-gallery__empty {
+    padding: 1rem;
+    text-align: center;
+    color: #666;
+}
+
+/* Increase grid target height on tall screens */
+@media (min-width: 2400px) and (min-height: 1025px) {
+    .pt-remote-gallery {
+        --grid-target-height: 500px;
+    }
+}

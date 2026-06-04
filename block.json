@@ -1,0 +1,24 @@
+{
+    "apiVersion": 3,
+    "name": "pt-remotegallery/gallery",
+    "title": "Remote Gallery",
+    "category": "media",
+    "icon": "images-alt2",
+    "description": "Insert a remote gallery fetched from a JSON endpoint and rendered with a grid and lightbox.",
+    "textdomain": "pt-remotegallery",
+    "supports": {
+        "html": false,
+        "align": true,
+        "alignWide": true
+    },
+    "attributes": {
+        "endpoint": {
+            "type": "string",
+            "default": "https://gallery.permanenttourist.ch/api"
+        },
+        "imagesPerPage": {
+            "type": "number",
+            "default": 50
+        }
+    }
+}
