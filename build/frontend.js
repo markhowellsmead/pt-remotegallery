@@ -103,11 +103,14 @@
         }
         // Title-case each part (handles hyphens/apostrophes)
         function titleCase(str) {
-            return String(str)
-                .toLowerCase()
-                .replace(/\b\w/g, function (c) {
-                    return c.toUpperCase();
-                });
+            // Use locale-aware case operations and a Unicode-aware regex so
+            // characters like 'ü' are handled correctly. Only treat explicit
+            // separators (start, space, hyphen, apostrophe) as word boundaries
+            // — do not depend on \b which is ASCII-only.
+            var s = String(str).toLocaleLowerCase(LOCALE);
+            return s.replace(/(^|\s|[-'’])(\p{L})/gu, function (_, sep, ch) {
+                return sep + ch.toLocaleUpperCase(LOCALE);
+            });
         }
         if (unique.length === 0) return "Unknown Location";
         return unique.map(titleCase).join(", ");
