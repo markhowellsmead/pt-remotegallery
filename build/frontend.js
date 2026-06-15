@@ -137,6 +137,23 @@
         return el;
     }
 
+    var hasBoundHeaderScrollState = false;
+    function updateHeaderScrollState() {
+        var scrolled = (window.scrollY || window.pageYOffset || 0) > 0;
+        qsa(".pt-remote-gallery__header").forEach(function (header) {
+            header.classList.toggle("is-scrolled", scrolled);
+        });
+    }
+    function ensureHeaderScrollStateSync() {
+        if (!hasBoundHeaderScrollState) {
+            window.addEventListener("scroll", updateHeaderScrollState, {
+                passive: true,
+            });
+            hasBoundHeaderScrollState = true;
+        }
+        updateHeaderScrollState();
+    }
+
     // Lightbox: images are non-interactive by default.
 
     async function fetchJson(url) {
@@ -387,6 +404,18 @@
             var header = createEl("div", "pt-remote-gallery__header");
             // Visual layout moved to CSS (build/style.css)
 
+            var headerTitle = createEl(
+                "h2",
+                "pt-remote-gallery__header-title",
+                "Photo stream",
+            );
+            var titleWrap = createEl(
+                "div",
+                "pt-remote-gallery__perpage-wrap pt-remote-gallery__header-title-wrap",
+            );
+            titleWrap.appendChild(headerTitle);
+            header.appendChild(titleWrap);
+
             var perPageSelect = createEl(
                 "select",
                 "pt-remote-gallery__perpage",
@@ -554,6 +583,7 @@
         qsa(".pt-remote-gallery").forEach(function (c) {
             initContainer(c);
         });
+        ensureHeaderScrollStateSync();
     }
 
     window.ptRemoteGalleryInit = initAll;
