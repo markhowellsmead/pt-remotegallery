@@ -137,10 +137,10 @@
         return el;
     }
 
-    // Lightbox removed: images are non-interactive by default.
+    // Lightbox: images are non-interactive by default.
 
     async function fetchJson(url) {
-        var res = await fetch(url, { credentials: "same-origin" });
+        var res = await fetch(url, { mode: "cors", credentials: "omit" });
         if (!res.ok) throw new Error("Network response not ok: " + res.status);
         return { data: await res.json(), headers: res.headers };
     }
@@ -151,44 +151,69 @@
         if (e.match(/\/api$/)) return e + "/meta";
         return e + "/meta";
     }
-
-    async function fetchMeta(endpoint) {
-        var metaUrl = buildMetaUrl(endpoint);
-        try {
-            var r = await fetchJson(metaUrl);
-            // Support both month_years / countries and monthYears / countries
-            var meta = {};
-            meta.monthYears = r.data.month_years || r.data.monthYears || [];
-            meta.countries =
-                r.data.countries || r.data.country || r.data.countries || [];
-            return meta;
-        } catch (e) {
-            return { monthYears: [], countries: [] };
-        }
-    }
-
     async function fetchImagePage(endpoint, monthYear, country, page, perPage) {
         var url = new URL(endpoint, window.location.origin);
-        // Use query params for compatibility
         url.searchParams.set("page", String(page));
         url.searchParams.set("per_page", String(perPage));
         if (monthYear) url.searchParams.set("month_year", String(monthYear));
         if (country) url.searchParams.set("country", String(country));
 
-        var res = await fetch(url.toString(), { credentials: "same-origin" });
+        var res = await fetch(url.toString(), {
+            mode: "cors",
+            credentials: "omit",
+        });
         if (!res.ok) throw new Error("API returned " + res.status);
         var data = await res.json();
-        var pageNum = parseInt(res.headers.get("x-page") || "1", 10) || 1;
-        var totalPages =
-            parseInt(res.headers.get("x-total-pages") || "0", 10) || 0;
-        var total =
-            parseInt(
-                res.headers.get("x-total") ||
-                    String((data && data.length) || 0),
-                10,
-            ) || 0;
+
+        // Items may be returned as the top-level array, or as an object
+        // { data: [...], meta: { total, total_pages }, page }
+        var items = Array.isArray(data)
+            ? data
+            : data && Array.isArray(data.data)
+              ? data.data
+              : [];
+
+        // Read multiple header variants so we mimic WP REST API behavior.
+        var headerPage =
+            res.headers.get("X-Page") || res.headers.get("X-WP-Page") || null;
+        var headerTotalPages =
+            res.headers.get("X-Total-Pages") ||
+            res.headers.get("X-WP-TotalPages") ||
+            res.headers.get("X-WP-Total-Pages") ||
+            null;
+        var headerTotal =
+            res.headers.get("X-Total") || res.headers.get("X-WP-Total") || null;
+
+        if (typeof headerPage === "string") headerPage = headerPage.trim();
+        if (typeof headerTotalPages === "string")
+            headerTotalPages = headerTotalPages.trim();
+        if (typeof headerTotal === "string") headerTotal = headerTotal.trim();
+
+        var pageCandidate =
+            headerPage ||
+            (data && (data.page || data.current_page || data.page_number)) ||
+            "1";
+        var totalPagesCandidate =
+            headerTotalPages ||
+            (data &&
+                (data.total_pages ||
+                    data.totalPages ||
+                    (data.meta && data.meta.total_pages))) ||
+            "0";
+        var totalCandidate =
+            headerTotal ||
+            (data &&
+                (data.total ||
+                    data.total_count ||
+                    (data.meta && data.meta.total))) ||
+            String(items.length || 0);
+
+        var pageNum = parseInt(String(pageCandidate), 10) || 1;
+        var totalPages = parseInt(String(totalPagesCandidate), 10) || 0;
+        var total = parseInt(String(totalCandidate), 10) || 0;
+
         return {
-            data: Array.isArray(data) ? data : [],
+            data: items,
             page: pageNum,
             totalPages: totalPages,
             total: total,
@@ -300,8 +325,9 @@
         });
     }
 
-    function createPager(container, page, totalPages) {
-        var pager = qs(".pt-remote-gallery__pager", container);
+    function createPager(container, page, totalPages, targetEl) {
+        var pager = targetEl || qs(".pt-remote-gallery__pager", container);
+        if (!pager) return;
         pager.innerHTML = "";
         if (totalPages <= 1) return;
         var prev = createEl("button", "pt-remote-gallery__prev", "Prev");
@@ -323,18 +349,114 @@
         var endpoint = container.getAttribute("data-endpoint") || "/api";
         var perPage =
             parseInt(
-                container.getAttribute("data-images-per-page") || "50",
+                container.getAttribute("data-images-per-page") || "20",
                 10,
-            ) || 50;
+            ) || 20;
+        // Allow per-page to be overridden by sessionStorage (keyed by endpoint)
+        var storageKey = null;
+        try {
+            storageKey =
+                "pt-remote-gallery-perpage:" +
+                encodeURIComponent(endpoint || "default");
+            var stored = sessionStorage.getItem(storageKey);
+            if (stored !== null) {
+                var parsed = parseInt(stored, 10);
+                if (!Number.isNaN(parsed) && parsed > 0) perPage = parsed;
+            }
+        } catch (e) {
+            /* sessionStorage not available; ignore */
+            storageKey = null;
+        }
         var controls = qs(".pt-remote-gallery__controls", container);
         var grid = qs(".pt-remote-gallery__grid", container);
         var pager = qs(".pt-remote-gallery__pager", container);
+        var headerPager = qs(".pt-remote-gallery__header-pager", container);
 
         grid.innerHTML =
             '<div class="pt-remote-gallery__loading">Loading…</div>';
 
-        // filters removed: hide controls area when present
+        // filters: hide controls area when present
         if (controls) controls.style.display = "none";
+
+        // Add a transparent header overlay with posts-per-page select.
+        // The header itself has pointer-events disabled so it does not block
+        // interactions with the gallery, but the select enables pointer
+        // events so it remains interactive.
+        if (!qs(".pt-remote-gallery__header", container)) {
+            container.style.position = container.style.position || "relative";
+            var header = createEl("div", "pt-remote-gallery__header");
+            // Visual layout moved to CSS (build/style.css)
+
+            var perPageSelect = createEl(
+                "select",
+                "pt-remote-gallery__perpage",
+            );
+            [20, 30, 40, 50, 100].forEach(function (n) {
+                var opt = createEl("option", null, String(n));
+                opt.value = String(n);
+                if (Number(n) === Number(perPage)) opt.selected = true;
+                perPageSelect.appendChild(opt);
+            });
+            // Ensure the select reflects the computed perPage value even when
+            // sessionStorage is not set (explicit assignment is more reliable
+            // than relying on option.selected in some browsers).
+            try {
+                perPageSelect.value = String(perPage);
+            } catch (e) {
+                /* ignore */
+            }
+            // make select interactive despite header's pointer-events:none (CSS)
+            perPageSelect.setAttribute("aria-label", "Images per page");
+            var selectId =
+                "pt-remote-gallery-perpage-" +
+                Math.random().toString(36).slice(2, 8);
+            perPageSelect.id = selectId;
+            perPageSelect.addEventListener("change", function (e) {
+                perPage = parseInt(e.target.value, 10) || 20;
+                try {
+                    if (storageKey)
+                        sessionStorage.setItem(storageKey, String(perPage));
+                } catch (err) {
+                    /* ignore storage errors */
+                }
+                loadPage(1, false);
+            });
+            // Visible label for the select (also interactive)
+            var perPageLabel = createEl(
+                "label",
+                "pt-remote-gallery__perpage-label",
+                "Per page:",
+            );
+            perPageLabel.htmlFor = perPageSelect.id;
+            // label styles handled in CSS
+
+            // Wrap label+select in a visible semi-opaque background so it's legible
+            var controlWrap = createEl(
+                "div",
+                "pt-remote-gallery__perpage-wrap",
+            );
+            // controlWrap visual styles moved to CSS
+            controlWrap.appendChild(perPageLabel);
+            controlWrap.appendChild(perPageSelect);
+
+            header.appendChild(controlWrap);
+            // Insert header before the grid so `position: sticky` sticks to the
+            // top of the gallery wrapper instead of appearing at the end.
+            if (grid && grid.parentNode)
+                grid.parentNode.insertBefore(header, grid);
+            else container.appendChild(header);
+            // Add a pager container into the header (rendered right of controls)
+            var headerPager = createEl(
+                "div",
+                "pt-remote-gallery__header-pager",
+            );
+            // visual styles moved to CSS; wrapped in same .pt-remote-gallery__perpage-wrap
+            var pagerWrap = createEl("div", "pt-remote-gallery__perpage-wrap");
+            pagerWrap.appendChild(headerPager);
+            header.appendChild(pagerWrap);
+        }
+
+        // Pagination: handled via Prev/Next pager
 
         var currentPage = 1;
         var totalPages = 0;
@@ -352,6 +474,23 @@
                     page,
                     perPage,
                 );
+                // Debug: log pagination headers and response size
+                try {
+                    var fetchedLog = {
+                        endpoint: endpoint,
+                        requestedPage: page,
+                        perPage: perPage,
+                        respPage: resp.page,
+                        respTotalPages: resp.totalPages,
+                        respTotal: resp.total,
+                        respDataLength: Array.isArray(resp.data)
+                            ? resp.data.length
+                            : 0,
+                    };
+                    // fetched page logged internally (no debug output)
+                } catch (e) {
+                    /* noop */
+                }
                 if (!append) grid.innerHTML = "";
                 if (!Array.isArray(resp.data) || resp.data.length === 0) {
                     // show a friendly empty state for first page, otherwise clear grid when appending
@@ -364,11 +503,22 @@
                 }
 
                 currentPage = resp.page || page;
-                totalPages = resp.totalPages || 0;
+                // Determine effective total pages using x-total-pages when present,
+                // otherwise fall back to x-total and perPage.
+                var totalCount = resp.total || 0;
+                var rawTotalPages = resp.totalPages || 0;
+                var effectiveTotalPages =
+                    rawTotalPages > 0
+                        ? rawTotalPages
+                        : totalCount > 0
+                          ? Math.ceil(totalCount / perPage)
+                          : 0;
+                totalPages = effectiveTotalPages || 0;
                 var pagerButtons = createPager(
                     container,
                     currentPage,
                     totalPages,
+                    headerPager || pager,
                 );
                 if (pagerButtons) {
                     // remove previous listeners by cloning buttons (simple way to avoid duplicates)
@@ -382,6 +532,8 @@
                             loadPage(currentPage + 1, false);
                     });
                 }
+
+                // No load-more button; rely on pager prev/next buttons only.
             } catch (e) {
                 // keep any existing grid content and show an unobtrusive error message
                 var existing = grid.innerHTML || "";
@@ -392,7 +544,7 @@
             }
         }
 
-        // filter controls removed; page loads without filter options
+        // filter controls: page loads without filter options
 
         // initial load
         loadPage(1, false);

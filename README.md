@@ -26,7 +26,7 @@ A lightweight WordPress plugin that registers a Gutenberg block (`Remote Gallery
 - Server render is in `render.php`; block metadata is in `block.json`.
 - Frontend JS/CSS are in `build/frontend.js` and `build/style.css`.
 - The CSS variable `--grid-target-height` defaults to `320px` and is increased to `500px` on tall viewports (>1024px).
-- Recent customizations removed filters and the lightbox; hover-show caption CSS has been disabled but caption markup remains.
+- Filters and the lightbox are disabled; hover-show caption CSS has been disabled but caption markup remains.
 
 If you want changes (re-enable hover captions, restore lightbox, alter layout heuristics), open an issue or request edits in the codebase.
 

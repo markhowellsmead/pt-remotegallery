@@ -27,11 +27,21 @@ function pt_remotegallery_register_assets()
     $url = PT_REMOTEGALLERY_URL;
 
     // Editor script (shows a placeholder in the block editor)
+    // Compute file-based cachebuster versions using filemtime when available.
+    $editor_file = $dir . '/build/editor.js';
+    $frontend_file = $dir . '/build/frontend.js';
+    $style_file = $dir . '/build/style.css';
+
+    $editor_ver = file_exists($editor_file) ? (string) filemtime($editor_file) : false;
+    $frontend_ver = file_exists($frontend_file) ? (string) filemtime($frontend_file) : false;
+    $style_ver = file_exists($style_file) ? (string) filemtime($style_file) : false;
+
+    // Editor script (shows a placeholder in the block editor)
     wp_register_script(
         'pt-remotegallery-editor',
         $url . 'build/editor.js',
         array('wp-blocks', 'wp-element', 'wp-block-editor', 'wp-components'),
-        filemtime($dir . '/build/editor.js'),
+        $editor_ver,
         true
     );
 
@@ -40,7 +50,7 @@ function pt_remotegallery_register_assets()
         'pt-remotegallery-frontend',
         $url . 'build/frontend.js',
         array(),
-        filemtime($dir . '/build/frontend.js'),
+        $frontend_ver,
         true
     );
 
@@ -49,7 +59,7 @@ function pt_remotegallery_register_assets()
         'pt-remotegallery-style',
         $url . 'build/style.css',
         array(),
-        filemtime($dir . '/build/style.css')
+        $style_ver
     );
 
     // Register block using metadata and override scripts/styles + render callback

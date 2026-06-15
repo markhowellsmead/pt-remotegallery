@@ -104,14 +104,8 @@
         transform 220ms ease;
     pointer-events: none;
 }
-/* Hover-to-show caption rules removed; captions remain in DOM.
-   Re-enable by restoring the rules above when needed. */
-.pt-remote-gallery__pager {
-    margin-top: 0.75rem;
-}
-.pt-remote-gallery__pager button {
-    margin-right: 0.5rem;
-}
+/* Hover-to-show caption rules are disabled; captions remain in DOM.
+    Re-enable by restoring the rules above when needed. */
 .pt-remote-gallery-lightbox {
     position: fixed;
     inset: 0;
@@ -158,6 +152,52 @@
 /* Increase grid target height on tall screens */
 @media (min-width: 2400px) and (min-height: 1025px) {
     .pt-remote-gallery {
-        --grid-target-height: 500px;
+        --grid-target-height: 400px;
     }
+}
+
+/* Header overlay and controls moved from inline styles in JS */
+.pt-remote-gallery__header {
+    position: sticky;
+    top: calc(
+        var(--wp-admin--admin-bar--height, 0px) + var(--masthead--height, 0px)
+    );
+    left: 0;
+    right: 0;
+    padding: 8px;
+    background: transparent;
+    pointer-events: none;
+    display: flex;
+    justify-content: flex-end;
+    column-gap: 1rem;
+    z-index: 1000;
+}
+
+.pt-remote-gallery__perpage,
+.pt-remote-gallery__perpage-label {
+    pointer-events: auto;
+    color: inherit;
+}
+
+.pt-remote-gallery__perpage-wrap {
+    pointer-events: auto;
+    background: rgba(255, 255, 255, 0.9);
+    padding: 1rem;
+    border-radius: 4px;
+    display: flex;
+    column-gap: 1rem;
+    align-items: center;
+}
+
+.pt-remote-gallery__header-pager {
+    font-size: 1rem;
+    font-family: inherit;
+    display: flex;
+    column-gap: 1rem;
+    align-items: center;
+}
+
+.pt-remote-gallery__header select,
+.pt-remote-gallery__header button {
+    font-family: inherit;
 }
