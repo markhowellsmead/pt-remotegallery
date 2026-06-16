@@ -245,3 +245,48 @@
 .pt-remote-gallery__header button {
     font-family: inherit;
 }
+
+@media (max-width: 700px) {
+    .pt-remote-gallery__header {
+        padding: 0.5rem 0.625rem;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        row-gap: 0.4rem;
+        column-gap: 0.5rem;
+    }
+
+    .pt-remote-gallery__header-title-wrap {
+        flex: 1 0 100%;
+        margin-right: 0;
+    }
+
+    .pt-remote-gallery__header-title {
+        font-size: 1.125rem;
+    }
+
+    .pt-remote-gallery__perpage-wrap {
+        padding: 0.25rem 0;
+        column-gap: 0.4rem;
+        flex-wrap: wrap;
+    }
+
+    .pt-remote-gallery__perpage-label {
+        font-size: 0.875rem;
+    }
+
+    .pt-remote-gallery__perpage {
+        min-height: 2rem;
+    }
+
+    .pt-remote-gallery__header-pager {
+        font-size: 0.9rem;
+        column-gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+
+    .pt-remote-gallery__header-pager button {
+        padding: 0.3rem 0.55rem;
+        line-height: 1.2;
+    }
+}

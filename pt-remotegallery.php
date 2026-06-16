@@ -3,7 +3,7 @@
 /**
  * Plugin Name: Permanent Tourist: Remote Gallery Block
  * Description: Registers a simple Gutenberg block to display a remote gallery (frontend fetch + JS lightbox). Minimal, standalone implementation.
- * Version: 1.1.0
+ * Version: 1.1.1
  * Author: Say Hello GmbH
  * Author URI: https://sayhello.ch
  * Text Domain: pt-remotegallery
